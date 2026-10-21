@@ -119,6 +119,9 @@ nav a[aria-current] i svg { stroke: #fff; }
   font: 10.5px var(--mono); color: var(--text2); background: rgba(255,255,255,.03); border: 1px solid var(--border-light); border-radius: var(--radius);
 }
 .side-foot small { display: block; margin-top: 8px; color: var(--text3); font-size: 10.5px; }
+.side-discord { all: unset; display: block; width: 100%; margin-top: 3px; color: var(--text3); font-size: 10px; letter-spacing: .3px; text-align: center; opacity: .85; cursor: pointer; white-space: nowrap; }
+.side-discord:hover, .side-discord:focus-visible { color: var(--accent); opacity: 1; }
+.side-discord .sd-short { display: none; }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; transition: background .3s; }
 .dot.idle { background: var(--text3); }
 .dot.bad { background: var(--bad); }
@@ -482,6 +485,9 @@ body.compact .window { display: none; }
   .brand { justify-content: center; padding: 14px 0; }
   .brand-mark { width: 34px; height: 34px; }
   .brand-info, .side-foot small, #sideStatus { display: none; }
+  .side-discord { font-size: 9px; margin-top: 6px; }
+  .side-discord .sd-full { display: none; }
+  .side-discord .sd-short { display: inline; }
   nav { padding: 10px 8px; }
   nav a { justify-content: center; gap: 0; padding: 7px 0; font-size: 0; }
   .side-foot { padding: 12px 8px; }

@@ -113,6 +113,19 @@ Add `--public-fallback` only if public-server entry is acceptable after a reject
 
 XynClaim is an unofficial community tool. It is not affiliated with Roblox or the Dragon Generations developers. Automating game input may be against Roblox's Terms of Use; use it at your own risk.
 
+## Community
+
+Come hang out in **The Generational**: [discord.gg/dbogen](https://discord.gg/dbogen).
+It's a Dragon Generations (DBOG) community, mostly European but open to everyone, and it's
+where Xyn answers XynClaim questions. Inside you'll find:
+
+- the DBOG Library, with guides on races, builds, training, bosses, codes and patch notes
+- XynClaim help, tips and tricks
+- regular giveaways, including Robux
+- PvP tournaments with a ranked ladder, plus game nights and events
+
+The app links to it at the bottom of the sidebar and under Settings > App Info.
+
 ## Reporting a problem
 
 Open an issue on GitHub with what happened and attach `%LOCALAPPDATA%\XynClaim\reports\live_run.log` and the newest `run_*.txt` from the same folder. Private server codes are already blanked out in these files, but read them before posting. Only download XynClaim from this repository's Releases page; each release lists the installer's SHA256 so you can check your download.

@@ -50,7 +50,7 @@ assert.doesNotMatch(script, /innerHTML/);
 for (const call of ["get_state", "start_run", "stop_run", "save_plan", "save_notifications", "test_notification",
   "reset_settings", "consume_last_error", "window_action", "get_stats", "export_stats_csv", "get_streak",
   "get_run", "get_receipt", "open_reports_folder", "setup_checks", "save_run_prefs", "get_schedule",
-  "save_schedule", "get_launch_info"]) {
+  "save_schedule", "get_launch_info", "open_discord"]) {
   assert.match(script, new RegExp(call), `app.js never calls ${call}`);
 }
 for (const field of ["slot_count:", "public_fallback:", "sequence_modes:", "sequence_align_targets:", "run_monitor:",

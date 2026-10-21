@@ -39,6 +39,7 @@ from xynclaim.webhook import send_webhook, validate_webhook_url, webhook_payload
 
 
 APP_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent.parent))
+DISCORD_INVITE_URL = "https://discord.gg/dbogen"
 SW_MINIMIZE = 6
 SW_RESTORE = 9
 SWP_NOZORDER = 0x0004
@@ -706,6 +707,11 @@ class XynClaimAPI:
         engine.REPORT_DIR.mkdir(parents=True, exist_ok=True)
         os.startfile(engine.REPORT_DIR)
         return {"path": str(engine.REPORT_DIR)}
+
+    def open_discord(self) -> dict[str, str]:
+        # Fixed URL, so the page can't ask the backend to open anything else.
+        os.startfile(DISCORD_INVITE_URL)
+        return {"url": DISCORD_INVITE_URL}
 
     def setup_checks(self) -> list[dict[str, str]]:
         roblox = Path(os.environ.get("LOCALAPPDATA", "")) / "Roblox" / "Versions"

@@ -277,3 +277,11 @@ def test_bridge_keeps_user_order_without_dependencies(tmp_path, monkeypatch):
         started = api.start_run({"slot_count": 4, "slots": [4, 2, 1, 4]})
         api._worker.join(2)
     assert started["slots"] == constructor.call_args.args[0] == [4, 2, 1]
+
+
+def test_open_discord_only_opens_the_fixed_invite(tmp_path):
+    api = bridge.XynClaimAPI(tmp_path / "settings.json")
+    with mock.patch.object(bridge.os, "startfile", create=True) as startfile:
+        result = api.open_discord()
+    startfile.assert_called_once_with("https://discord.gg/dbogen")
+    assert result == {"url": "https://discord.gg/dbogen"}

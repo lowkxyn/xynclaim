@@ -1227,6 +1227,7 @@
   });
 
   $("#openReports").addEventListener("click", () => invoke("open_reports_folder"));
+  for (const id of ["#sideDiscord", "#settingsDiscord"]) $(id).addEventListener("click", () => invoke("open_discord"));
   $("#exportCsv").addEventListener("click", async () => {
     const result = await invoke("export_stats_csv");
     if (result?.path) toast(`Saved ${result.path}`);
