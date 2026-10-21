@@ -68,10 +68,10 @@ Build scripts compile installers; they never run an installer or the application
 ## Safe preview and checks
 
 ```powershell
-.\work\custom-installer\XynClaim_2.0.0_x64-setup.exe --dry-run --dry-run-fresh
-.\work\custom-installer\XynClaim_2.0.0_x64-setup.exe --dry-run
-.\work\custom-installer\XynClaim_2.0.0_x64-setup.exe --dry-run --dry-run-error
-.\work\custom-installer\XynClaim_2.0.0_x64-setup.exe --dry-run --test-no-webview
+.\work\custom-installer\XynClaim_<version>_x64-setup.exe --dry-run --dry-run-fresh
+.\work\custom-installer\XynClaim_<version>_x64-setup.exe --dry-run
+.\work\custom-installer\XynClaim_<version>_x64-setup.exe --dry-run --dry-run-error
+.\work\custom-installer\XynClaim_<version>_x64-setup.exe --dry-run --test-no-webview
 $env:XYN_INSTALLER_BUNDLE = (Resolve-Path .\work\custom-installer\bundle).Path
 $env:CARGO_TARGET_DIR = Join-Path $PWD 'work\custom-installer\target'
 cargo test --locked --release --manifest-path .\packaging\custom-installer\Cargo.toml

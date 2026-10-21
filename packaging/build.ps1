@@ -48,6 +48,9 @@ Write-Host "Built $Exe"
 if ($SkipInstaller) { return }
 if ($CustomInstaller) {
     & (Join-Path $PSScriptRoot 'build-custom.ps1') -Source (Join-Path $Root 'dist\XynClaim') -Version $Version -OutputDirectory (Join-Path $Root 'dist')
+    if ($LASTEXITCODE -ne 0) { throw 'Custom installer build failed' }
+    & $Py (Join-Path $PSScriptRoot 'release_assets.py') (Join-Path $Root 'dist') $Version
+    if ($LASTEXITCODE -ne 0) { throw 'Writing release assets failed' }
     return
 }
 

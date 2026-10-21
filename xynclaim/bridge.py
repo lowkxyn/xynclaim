@@ -754,8 +754,8 @@ class XynClaimAPI:
             return result
 
         def mode(value: object) -> str:
-            if not isinstance(value, str) or value not in {"always", "align", "hold"}:
-                raise ValueError("Sequence mode must be always, align, or hold")
+            if not isinstance(value, str) or value not in {"always", "align", "hold", "sync"}:
+                raise ValueError("Sequence mode must be Claim, Align, Hold, or Day 1")
             return str(value)
 
         def target_slot(value: object) -> int:

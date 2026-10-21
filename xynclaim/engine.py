@@ -1548,11 +1548,11 @@ class DBOGRunner:
         if any(
             not isinstance(slot, int)
             or not 1 <= slot <= 12
-            or policy not in {"always", "align", "hold"}
+            or policy not in {"always", "align", "hold", "sync"}
             for slot, policy in policies.items()
         ):
             raise ValueError(
-                "slot_mismatch_policies must map slot numbers to always, align, or hold"
+                "slot_mismatch_policies must map slot numbers to always, align, hold, or sync"
             )
         self.slot_mismatch_policies = policies
         from xynclaim.settings import order_sequence_slots, validate_sequence
@@ -1560,6 +1560,7 @@ class DBOGRunner:
         self.sequence_align_targets = dict(sequence_align_targets or {})
         validate_sequence(policies, self.sequence_align_targets, configured_slot_count)
         self.slots = order_sequence_slots(slots, policies, self.sequence_align_targets)
+        self.sync_day_one_seen: set[int] = set()
         self.claimed_days_today: dict[int, tuple[int, datetime]] = {}
         if not 1 <= min_claim_day <= 14:
             raise ValueError("min_claim_day must be between 1 and 14")
@@ -2442,6 +2443,18 @@ class DBOGRunner:
         policy = getattr(self, "slot_mismatch_policies", {}).get(slot)
         if policy == "hold":
             raise SlotHeld(f"Slot {slot}: held by slot mode")
+        if policy == "sync" and day == 1:
+            if not hasattr(self, "sync_day_one_seen"):
+                self.sync_day_one_seen = set()
+            self.sync_day_one_seen.add(slot)
+            waiting = [selected for selected in self.slots
+                       if self.slot_mismatch_policies.get(selected) == "sync"
+                       and selected not in self.sync_day_one_seen]
+            if waiting:
+                raise SlotHeld(
+                    f"Slot {slot}: on Day 1, waiting for slots "
+                    f"{', '.join(map(str, waiting))} to reach Day 1", day,
+                )
         if policy == "align":
             from xynclaim.settings import alignment_reason, recorded_day_today
 
@@ -2468,7 +2481,7 @@ class DBOGRunner:
             else:
                 self.log(f"Slot {slot}: lined up with slot {target} on Day {day}")
         if saved_next_day is not None and day != saved_next_day:
-            if policy in {"always", "align"}:
+            if policy in {"always", "align", "sync"}:
                 self.log(
                     f"Slot {slot}: WARNING ? visible Day {day} differs from local "
                     f"Day {saved_next_day}; using the visible day"
@@ -2768,6 +2781,27 @@ class DBOGRunner:
             self._audio_restore = []
 
     def run(self) -> RunReport:
+        self.sync_day_one_seen = set()
+        sync_slots = {slot for slot in self.slots
+                      if getattr(self, "slot_mismatch_policies", {}).get(slot) == "sync"}
+        work_slots = list(self.slots)
+        index = -1
+
+        def record_result(result: SlotResult) -> None:
+            for result_index, previous in enumerate(self.results):
+                if previous.slot == result.slot:
+                    self.results[result_index] = result
+                    return
+            self.results.append(result)
+
+        def record_pending_revisits(detail: str, include_current: bool = False) -> None:
+            start = max(len(self.slots), index if include_current else index + 1)
+            for pending_slot in work_slots[start:]:
+                if any(result.slot == pending_slot and result.status != "held"
+                       for result in self.results):
+                    continue
+                record_result(SlotResult(pending_slot, "not_attempted", None, 0.0, detail=detail))
+
         ensure_default_desktop()
         started = self.clock()
         started_utc = datetime.now(timezone.utc)
@@ -2823,7 +2857,7 @@ class DBOGRunner:
                 # A leftover note means an earlier run died at bar 1: lower (a no-op)
                 # so this run's cleanup raises it back to the player's level.
                 self.lower_graphics_in_game()
-            for index, slot in enumerate(self.slots):
+            for index, slot in enumerate(work_slots):
                 self.check_stopped()
                 slot_started = self.clock()
                 try:
@@ -2833,7 +2867,7 @@ class DBOGRunner:
                 except PostClaimNavigationFailed as error:
                     result = error.result
                     detail = str(error)
-                    self.results.append(result)
+                    record_result(result)
                     if self.capture is not None:
                         try:
                             diagnostic = self.save_diagnostic(
@@ -2847,11 +2881,12 @@ class DBOGRunner:
                     self.append_unattempted(
                         "Run stopped after post-result navigation failed"
                     )
+                    record_pending_revisits("Run failed before the Day 1 revisit")
                     break
                 except SlotUnavailable as error:
                     detail = str(error)
                     self.log(f"Slot {slot}: not available — {detail}")
-                    self.results.append(
+                    record_result(
                         SlotResult(
                             slot=slot,
                             status="slot_missing",
@@ -2864,7 +2899,7 @@ class DBOGRunner:
                 except SlotHeld as error:
                     detail = str(error)
                     self.log(f"Slot {slot}: HELD — {detail}")
-                    self.results.append(
+                    record_result(
                         SlotResult(
                             slot=slot,
                             status="held",
@@ -2882,13 +2917,14 @@ class DBOGRunner:
                         self.errors.append(detail)
                         self.log(detail)
                         self.append_unattempted("Navigation failed after a held slot")
+                        record_pending_revisits("Run failed before the Day 1 revisit")
                         break
                     continue
                 except JoinCodeRejected as error:
                     detail = str(error)
                     self.log(f"Slot {slot}: SERVER CODE REJECTED — {detail}")
                     self.errors.append(f"Slot {slot}: {detail}")
-                    self.results.append(
+                    record_result(
                         SlotResult(
                             slot=slot,
                             status="server_code_invalid",
@@ -2897,8 +2933,8 @@ class DBOGRunner:
                             detail=detail,
                         )
                     )
-                    for pending_slot in self.slots[index + 1 :]:
-                        self.results.append(
+                    for pending_slot in work_slots[index + 1 :]:
+                        record_result(
                             SlotResult(
                                 slot=pending_slot,
                                 status="not_attempted",
@@ -2912,7 +2948,7 @@ class DBOGRunner:
                     detail = str(error)
                     self.log(f"Slot {slot}: STOPPED SAFELY — {detail}")
                     self.errors.append(f"Slot {slot}: {detail}")
-                    self.results.append(
+                    record_result(
                         SlotResult(
                             slot=slot,
                             status="failed",
@@ -2922,6 +2958,7 @@ class DBOGRunner:
                         )
                     )
                     self.append_unattempted("Run stopped after Roblox lost focus")
+                    record_pending_revisits("Run failed before the Day 1 revisit")
                     break
                 except Exception as error:
                     detail = f"{type(error).__name__}: {error}"
@@ -2935,7 +2972,7 @@ class DBOGRunner:
                             pass
                     self.log(f"Slot {slot}: FAILED — {detail}")
                     self.errors.append(f"Slot {slot}: {detail}")
-                    self.results.append(
+                    record_result(
                         SlotResult(
                             slot=slot,
                             status="failed",
@@ -2944,33 +2981,45 @@ class DBOGRunner:
                             detail=detail,
                         )
                     )
-                    for pending_slot in self.slots[index + 1 :]:
-                        self.results.append(
+                    for pending_slot in work_slots[index + 1 :]:
+                        record_result(
                             SlotResult(
                                 slot=pending_slot,
                                 status="not_attempted",
                                 day=None,
                                 seconds=0.0,
-                                detail="Run stopped after an unrecognized or unsafe game state",
+                                detail=("Run failed before the Day 1 revisit" if index >= len(self.slots)
+                                        else "Run stopped after an unrecognized or unsafe game state"),
                             )
                         )
                     break
                 else:
-                    self.results.append(result)
-                    remaining = len(self.slots) - index - 1
+                    record_result(result)
+                    remaining = len(work_slots) - index - 1
                     self.log(f"Slot {slot}: complete ({remaining} remaining)")
                 finally:
                     if self.results:
                         save_partial_report(self.make_report(started_utc, started))
+                    if (index == len(self.slots) - 1 and sync_slots
+                            and sync_slots <= self.sync_day_one_seen and not self.errors
+                            and all(any(result.slot == selected and result.day == 1
+                                        and result.status in {"held", "claimed_verified", "claimed_unverified"}
+                                        for result in self.results) for selected in sync_slots)):
+                        # Revisit only Day 1 holds, using the same safety and reporting path.
+                        work_slots.extend(result.slot for result in self.results
+                                          if result.slot in sync_slots and result.status == "held"
+                                          and result.day == 1)
         except (RunStopped, KeyboardInterrupt):
             self.stop_event.set()
             self.errors.append("Run stopped by user")
             self.append_unattempted("Run stopped by user")
+            record_pending_revisits("Run stopped before the Day 1 revisit", include_current=True)
             self.log("Run stopped")
         except Exception as error:
             detail = f"{type(error).__name__}: {error}"
             self.errors.append(detail)
             self.append_unattempted("Run stopped before this slot could be attempted")
+            record_pending_revisits("Run failed before the Day 1 revisit", include_current=True)
             self.log(f"RUN FAILED — {detail}")
         finally:
             # Cleanup still needs Roblox in front to tidy up, so it takes focus back.

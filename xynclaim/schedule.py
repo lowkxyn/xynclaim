@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes
+from ctypes import wintypes
 from datetime import datetime, timedelta, timezone
 import getpass
 import os
@@ -26,6 +28,61 @@ def _run_task_command(args: list[str]) -> subprocess.CompletedProcess[str]:
 
 def task_present() -> bool:
     return _run_task_command(["schtasks", "/Query", "/TN", TASK_NAME]).returncode == 0
+
+
+def _task_user_id(user: str) -> str:
+    user = user.lower()
+    if not user or user.startswith("s-1-") or os.name != "nt":
+        return user
+    # Task Scheduler can store the account name as a SID when querying its XML.
+    advapi = ctypes.WinDLL("advapi32", use_last_error=True)
+    lookup = advapi.LookupAccountNameW
+    lookup.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.LPVOID,
+                       ctypes.POINTER(wintypes.DWORD), wintypes.LPWSTR,
+                       ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD)]
+    lookup.restype = wintypes.BOOL
+    sid_size, domain_size, sid_type = wintypes.DWORD(), wintypes.DWORD(), wintypes.DWORD()
+    lookup(None, user, None, ctypes.byref(sid_size), None,
+           ctypes.byref(domain_size), ctypes.byref(sid_type))
+    if not sid_size.value:
+        return user
+    sid = ctypes.create_string_buffer(sid_size.value)
+    domain = ctypes.create_unicode_buffer(domain_size.value)
+    if not lookup(None, user, sid, ctypes.byref(sid_size), domain,
+                  ctypes.byref(domain_size), ctypes.byref(sid_type)):
+        return user
+    convert = advapi.ConvertSidToStringSidW
+    convert.argtypes = [wintypes.LPVOID, ctypes.POINTER(wintypes.LPWSTR)]
+    convert.restype = wintypes.BOOL
+    sid_text = wintypes.LPWSTR()
+    if not convert(sid, ctypes.byref(sid_text)):
+        return user
+    free = ctypes.WinDLL("kernel32", use_last_error=True).LocalFree
+    free.argtypes = [wintypes.LPVOID]
+    free.restype = wintypes.LPVOID
+    try:
+        return sid_text.value.lower()
+    finally:
+        free(ctypes.cast(sid_text, wintypes.LPVOID))
+
+
+def task_signature(xml: str) -> tuple[str, ...] | None:
+    """Compare the action, daily time, principal and fixed execution settings."""
+    if not isinstance(xml, str):
+        return None
+    try:
+        root = ET.fromstring(xml.split("?>", 1)[-1] if xml.lstrip().startswith("<?xml") else xml)
+    except ET.ParseError:
+        return None
+    def text(tag: str, default: str = "") -> str:
+        path = "/".join(f"{{{NS}}}{part}" for part in tag.split("/"))
+        found = root.find(f".//{path}")
+        return (found.text or "").strip() if found is not None else default
+    return (text("StartBoundary")[11:], text("Command").lower(), text("Arguments"),
+            text("WorkingDirectory").lower(), text("StartWhenAvailable").lower(),
+            _task_user_id(text("UserId")), text("CalendarTrigger/Enabled", "true").lower(),
+            text("LogonType"), text("RunLevel", "LeastPrivilege"), text("ExecutionTimeLimit"),
+            text("MultipleInstancesPolicy"), text("Settings/Enabled", "true").lower())
 
 
 def action_command(app_path: Path, frozen: bool = False, executable: str | None = None) -> tuple[str, str]:
@@ -53,7 +110,7 @@ def task_xml(settings: PlannerSettings, app_path: Path, frozen: bool = False,
     triggers = ET.SubElement(root, f"{{{NS}}}Triggers")
     trigger = ET.SubElement(triggers, f"{{{NS}}}CalendarTrigger")
     # Local wall clock on purpose: the reset follows US Eastern DST, and a fixed-UTC trigger would fire
-    # before the reset when US DST ends. Every launch re-registers, so the user's own DST changes stay correct.
+    # before the reset when US DST ends. A launch re-registers when the local time shifts, so the user's own DST changes stay correct.
     ET.SubElement(trigger, f"{{{NS}}}StartBoundary").text = scheduled.replace(tzinfo=None).isoformat(timespec="seconds")
     ET.SubElement(trigger, f"{{{NS}}}Enabled").text = "true"
     daily = ET.SubElement(trigger, f"{{{NS}}}ScheduleByDay")
@@ -83,6 +140,11 @@ def sync_task(settings: PlannerSettings, app_path: Path, frozen: bool = False,
                 raise RuntimeError(result.stderr.strip() or "Couldn't delete scheduled task")
         return
     xml = task_xml(settings, app_path, frozen, executable)
+    # Rewriting an unchanged task on every launch looks like malware persistence to
+    # antivirus heuristics, so only register when something the task does changed.
+    existing = _run_task_command(["schtasks", "/Query", "/TN", TASK_NAME, "/XML"])
+    if existing.returncode == 0 and task_signature(existing.stdout) == task_signature(xml):
+        return
     with tempfile.TemporaryDirectory(prefix="xynclaim-task-") as folder:
         path = Path(folder) / "task.xml"
         path.write_text('<?xml version="1.0" encoding="UTF-16"?>\n' + xml, encoding="utf-16")

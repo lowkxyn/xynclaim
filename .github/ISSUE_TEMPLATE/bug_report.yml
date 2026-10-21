@@ -14,7 +14,7 @@ body:
     attributes:
       label: XynClaim version
       description: Shown at the bottom of the left sidebar, or in the Version line of run_*.txt.
-      placeholder: "2.0.0"
+      placeholder: "2.0.1"
     validations:
       required: true
   - type: dropdown

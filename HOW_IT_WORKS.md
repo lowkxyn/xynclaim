@@ -47,6 +47,8 @@ small reference images in `assets/reference/` and read with the built-in Windows
 7. **Clean up.** Put the window and audio back, clear any shared code still on screen, and
    optionally close the Roblox process this run started or attached to.
 
+The **Day 1** rule claims daily until a slot shows Day 1, then holds it until every selected slot using this rule has shown Day 1 in the same run. Once they are all ready, earlier held slots are revisited so they all claim Day 1 together and continue in step. If any of these slots fails or is unavailable, held slots wait for a later run. Restore Streak is never used.
+
 Every click checks first that Roblox is the foreground window and that nothing covers the click
 point. If you click another app, the run stops safely instead of clicking blind.
 

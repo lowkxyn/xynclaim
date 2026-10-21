@@ -642,7 +642,7 @@
           renderStreak();
           queuePlanSave();
         },
-      }, ...[["Claim", "always"], ...(state.prefs.slot_count > 1 ? [["Align", "align"]] : []), ["Hold", "hold"]].map(([label, value]) => new Option(label, value, false, value === mode)));
+      }, ...[["Claim", "always"], ["Day 1", "sync"], ...(state.prefs.slot_count > 1 ? [["Align", "align"]] : []), ["Hold", "hold"]].map(([label, value]) => new Option(label, value, false, value === mode)));
       const targetSelect = h("select", {
         title: `Align slot ${slot.slot} with another slot`,
         onchange: (event) => {
@@ -1224,6 +1224,13 @@
     renderStreak();
     queuePlanSave();
     toast("Slot 1 claims daily; the other slots align with slot 1.");
+  });
+
+  $("#sequenceSyncPreset").addEventListener("click", () => {
+    for (let slot = 1; slot <= state.prefs.slot_count; slot += 1) state.plan[slot] = { mode: "sync" };
+    renderStreak();
+    queuePlanSave();
+    toast("All slots will line up at Day 1 and claim together.");
   });
 
   $("#openReports").addEventListener("click", () => invoke("open_reports_folder"));

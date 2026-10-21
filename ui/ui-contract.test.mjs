@@ -629,7 +629,7 @@ test("one-slot settings cannot select Align and preset saves no missing target",
   runtime.app.state.streak = { slots: [{ slot: 1, mode: "always" }] };
   runtime.app.renderStreak();
   const choices = runtime.element("#streakTable").children[1].children[4].children[0].options;
-  assert.deepEqual(Array.from(choices, (option) => option.value), ["always", "hold"]);
+  assert.deepEqual(Array.from(choices, (option) => option.value), ["always", "sync", "hold"]);
   await runtime.element("#sequencePreset").click();
   await [...runtime.timers.values()].find((timer) => timer.delay === 300).callback();
   assert.deepEqual(Object.keys(saved.sequence_align_targets), []);
@@ -640,7 +640,13 @@ test("preset aligns configured slots with slot one", async () => {
   const runtime = appRuntime();
   runtime.app.state.prefs.slot_count = 3;
   runtime.app.state.streak = { slots: [{ slot: 1 }, { slot: 2 }, { slot: 3 }] };
+  runtime.app.state.plan = { 1: { mode: "sync" }, 2: { mode: "sync" }, 3: { mode: "sync" } };
+  let saved;
+  runtime.bridge({ save_plan: (plan) => { saved = plan; return { saved: true }; } });
   await runtime.element("#sequencePreset").click();
+  await [...runtime.timers.values()].find((timer) => timer.delay === 300).callback();
+  assert.deepEqual({ ...saved.sequence_modes }, { 1: "always", 2: "align", 3: "align" });
+  assert.deepEqual({ ...saved.sequence_align_targets }, { 2: 1, 3: 1 });
   assert.equal(runtime.app.state.plan[1].mode, "always");
   assert.equal(runtime.app.state.plan[2].target, 1);
   assert.equal(runtime.app.state.plan[3].target, 1);
@@ -708,11 +714,43 @@ test("history groups runs by day with a claimed total and a dropdown per day", a
   assert.deepEqual(rows().map((row) => row.className.includes("run-day") ? "day" : "run"), ["day", "day", "run"]);
 });
 
-test("Streak explains all three rules and never promises paid restoration", () => {
+test("Streak explains all four rules and never promises paid restoration", () => {
   assert.match(html, /Claim: claims this slot every day\./);
   assert.match(html, /by default the first slot set to Claim/);
   assert.match(html, /XynClaim never buys it/);
   assert.match(html, /which can take up to two weeks once/);
   assert.match(html, /Hold: never claims this slot until you change it\./);
   assert.doesNotMatch(html, /Line slots up as Days/);
+});
+
+
+test("Day 1 mode is selectable and explains the live line-up", async () => {
+  const runtime = appRuntime();
+  runtime.app.state.prefs.slot_count = 2;
+  runtime.app.state.streak = { slots: [{ slot: 1, mode: "always" }] };
+  runtime.app.renderStreak();
+  const rule = () => runtime.element("#streakTable").children[1].children[4];
+  const option = Array.from(rule().children[0].options).find((item) => item.value === "sync");
+  assert.equal(option.textContent, "Day 1");
+  await rule().children[0].dispatch("change", { target: { value: "sync" } });
+  assert.equal(runtime.app.state.plan[1].mode, "sync");
+  assert.equal(rule().children.length, 1);
+  assert.match(html, /claims every day until it reaches Day 1, then waits until every Day 1 slot is on Day 1 so they all claim together\./);
+});
+
+test("Day 1 preset saves exactly the configured slots through autosave", async () => {
+  for (const count of [1, 3, 12]) {
+    const runtime = appRuntime();
+    let saved;
+    runtime.bridge({ save_plan: (plan) => { saved = plan; } });
+    runtime.app.state.prefs.slot_count = count;
+    runtime.app.state.streak = { slots: Array.from({ length: count }, (_, i) => ({ slot: i + 1 })) };
+    await runtime.element("#sequenceSyncPreset").click();
+    await [...runtime.timers.values()].find((timer) => timer.delay === 300).callback();
+    assert.equal(Object.keys(saved.sequence_modes).length, count);
+    assert.ok(Object.values(saved.sequence_modes).every((mode) => mode === "sync"));
+    assert.equal(runtime.app.state.plan[count + 1], undefined);
+    assert.equal(saved.sequence_align_targets[1], undefined);
+  }
+  assert.match(html, /id="sequenceSyncPreset">Line up all slots at Day 1<\/button>/);
 });

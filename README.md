@@ -61,6 +61,7 @@ The planner never skips by weekday and does not guess what a missed day does. Ea
 
 - **Claim** claims the slot every day.
 - **Align** keeps the slot on the same reward day as another slot (by default the first slot set to Claim). It claims only on days when both are on the same day and skips the rest. After a skipped day DBOG may give a grace day or offer a Robux restore, which XynClaim never buys. Otherwise the slot drops back to Day 1 and waits until the other slot is on Day 1 too, which can take up to two weeks once; after that they claim together. The day is read live from the game each time, never guessed.
+- **Day 1** claims daily until the slot reaches Day 1, then waits until every slot in that run set to Day 1 is on Day 1. They all claim Day 1 together and continue in step. Each day is read live from the game.
 - **Hold** never claims that slot until you change it.
 
 New setups start with slot 1 on Claim and the other slots aligned with it. **Align other slots with slot 1** restores that.
@@ -128,7 +129,7 @@ The app links to it at the bottom of the sidebar and under Settings > App Info.
 
 ## Reporting a problem
 
-Open an issue on GitHub with what happened and attach `%LOCALAPPDATA%\XynClaim\reports\live_run.log` and the newest `run_*.txt` from the same folder. Private server codes are already blanked out in these files, but read them before posting. Only download XynClaim from this repository's Releases page; each release lists the installer's SHA256 so you can check your download.
+Open an issue on GitHub with what happened and attach `%LOCALAPPDATA%\XynClaim\reports\live_run.log` and the newest `run_*.txt` from the same folder. Private server codes are already blanked out in these files, but read them before posting. Only download XynClaim from this repository's Releases page; each release includes `SHA256SUMS.txt` so you can check your download (`Get-FileHash` in PowerShell).
 
 ## License
 

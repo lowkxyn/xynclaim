@@ -13,7 +13,7 @@ from xynclaim.hotkey import normalize_hotkey
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 
 
-SEQUENCE_MODES = {"always", "align", "hold"}
+SEQUENCE_MODES = {"always", "align", "hold", "sync"}
 
 
 class SettingsError(ValueError):
@@ -314,6 +314,11 @@ def validate_sequence(modes: dict[int, str], targets: dict[int, int], slot_count
                 raise SettingsError(f"Slot {current} cannot Align with itself; pick another slot")
             if not 1 <= target <= slot_count:
                 raise SettingsError(f"Slot {current} must Align with an existing slot")
+            if modes.get(target, "always") == "sync":
+                raise SettingsError(
+                    f"Slot {current} can't Align with slot {target} while slot {target} uses Day 1; "
+                    f"set slot {current} to Day 1 too or pick another target"
+                )
             current = target
 
 
@@ -387,6 +392,9 @@ def plan_sequence_claims(
         if mode == "hold":
             held.append(slot)
             reasons[slot] = "Held by slot mode"
+        elif mode == "sync":
+            due.append(slot)
+            reasons[slot] = "Day 1 line-up: claims until Day 1, then waits for the other Day 1 slots"
         elif mode == "always":
             due.append(slot)
             reasons[slot] = "Claim anyway"

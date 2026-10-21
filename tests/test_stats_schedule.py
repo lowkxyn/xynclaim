@@ -258,6 +258,8 @@ def test_task_registration_writes_actual_utf16_xml():
     settings = replace(default_settings(), schedule_enabled=True)
 
     def register(args):
+        if args[1] == "/Query":
+            return mock.Mock(returncode=1, stdout="")
         path = Path(args[args.index("/XML") + 1])
         content = path.read_bytes()
         assert content.startswith((b"\xff\xfe", b"\xfe\xff"))
@@ -337,3 +339,88 @@ def test_successful_schedule_save_preserves_other_preferences(tmp_path):
     assert saved.mute_roblox is True
     assert saved.schedule_offset_minutes == 60
     assert sync.call_args.args[0] == saved
+
+
+def test_unchanged_task_is_not_rewritten():
+    settings = replace(default_settings(), schedule_enabled=True)
+    app = Path("C:/App/XynClaim.exe")
+    current = schedule.task_xml(settings, app, frozen=True, executable=str(app))
+    # schtasks returns its own formatting, a declaration and an older start date.
+    queried = '<?xml version="1.0" encoding="UTF-16"?>' + current.replace(current[current.index("<StartBoundary>") + 15:][:10], "2026-01-01")
+    with mock.patch.object(schedule, "_run_task_command") as command:
+        command.return_value.returncode = 0
+        command.return_value.stdout = queried
+        schedule.sync_task(settings, app, frozen=True, executable=str(app))
+    assert [call.args[0][:2] for call in command.call_args_list] == [["schtasks", "/Query"]]
+
+
+def test_task_is_rewritten_when_the_program_moved():
+    settings = replace(default_settings(), schedule_enabled=True)
+    old = schedule.task_xml(settings, Path("C:/Old/XynClaim.exe"), frozen=True, executable="C:/Old/XynClaim.exe")
+    with mock.patch.object(schedule, "_run_task_command") as command:
+        command.return_value.returncode = 0
+        command.return_value.stdout = old
+        schedule.sync_task(settings, Path("C:/New/XynClaim.exe"), frozen=True, executable="C:/New/XynClaim.exe")
+    assert command.call_args.args[0][:2] == ["schtasks", "/Create"]
+
+
+def test_task_signature_ignores_the_start_date_but_not_the_time():
+    settings = replace(default_settings(), schedule_enabled=True)
+    xml = schedule.task_xml(settings, Path("C:/App/XynClaim.exe"), frozen=True, executable="C:/App/XynClaim.exe")
+    start = xml.index("<StartBoundary>") + 15
+    other_day = xml[:start] + "2030-05-05" + xml[start + 10:]
+    other_time = xml[:start + 11] + "23:59:00" + xml[start + 19:]
+    assert schedule.task_signature(other_day) == schedule.task_signature(xml)
+    assert schedule.task_signature(other_time) != schedule.task_signature(xml)
+    assert schedule.task_signature("not xml") is None
+
+
+@pytest.mark.parametrize("field,value", [
+    ("UserId", "OTHERDOMAIN\\otheruser"),
+    ("CalendarTrigger/Enabled", "false"),
+    ("LogonType", "Password"),
+    ("RunLevel", "HighestAvailable"),
+    ("ExecutionTimeLimit", "PT1H"),
+    ("MultipleInstancesPolicy", "Parallel"),
+    ("Settings/Enabled", "false"),
+])
+def test_task_is_rewritten_when_principal_or_fixed_settings_change(field, value):
+    settings = replace(default_settings(), schedule_enabled=True)
+    app = Path("C:/App/XynClaim.exe")
+    xml = schedule.task_xml(settings, app, frozen=True, executable=str(app))
+    root = ET.fromstring(xml)
+    path = "/".join(f"{{{schedule.NS}}}{part}" for part in field.split("/"))
+    node = root.find(f".//{path}")
+    if node is None:
+        node = ET.SubElement(root.find(f"{{{schedule.NS}}}Settings"), f"{{{schedule.NS}}}Enabled")
+    node.text = value
+    changed = ET.tostring(root, encoding="unicode")
+    assert schedule.task_signature(changed) != schedule.task_signature(xml)
+    with mock.patch.object(schedule, "_run_task_command") as command:
+        command.return_value.returncode = 0
+        command.return_value.stdout = changed
+        schedule.sync_task(settings, app, frozen=True, executable=str(app))
+    assert [call.args[0][:2] for call in command.call_args_list] == [
+        ["schtasks", "/Query"], ["schtasks", "/Create"]]
+
+
+def test_task_signature_normalizes_user_case_and_default_enabled():
+    xml = schedule.task_xml(default_settings(), Path("C:/App/XynClaim.exe"), frozen=True)
+    root = ET.fromstring(xml)
+    user = root.find(f".//{{{schedule.NS}}}UserId")
+    user.text = user.text.swapcase()
+    trigger = root.find(f".//{{{schedule.NS}}}CalendarTrigger")
+    trigger.remove(trigger.find(f"{{{schedule.NS}}}Enabled"))
+    assert schedule.task_signature(ET.tostring(root, encoding="unicode")) == schedule.task_signature(xml)
+
+
+def test_task_signature_normalizes_stored_sid_and_omitted_run_level():
+    xml = schedule.task_xml(default_settings(), Path("C:/App/XynClaim.exe"), frozen=True)
+    root = ET.fromstring(xml)
+    principal = root.find(f".//{{{schedule.NS}}}Principal")
+    principal.remove(principal.find(f"{{{schedule.NS}}}RunLevel"))
+    user = principal.find(f"{{{schedule.NS}}}UserId")
+    sid = schedule._task_user_id(user.text)
+    assert sid.startswith("s-1-")
+    user.text = sid.upper()
+    assert schedule.task_signature(ET.tostring(root, encoding="unicode")) == schedule.task_signature(xml)

@@ -96,11 +96,13 @@
         <div class="note rules-note">
           <p>Claim: claims this slot every day.</p>
           <p>Align: keeps this slot on the same reward day as the slot you pick (by default the first slot set to Claim). It only claims on days when both are on the same day; otherwise it skips that day. After a skipped day DBOG may give a grace day or offer a Robux restore (XynClaim never buys it). If not, the slot goes back to Day 1 and waits until the other slot is on Day 1 too, which can take up to two weeks once. After that they claim together.</p>
+          <p>Day 1: claims every day until it reaches Day 1, then waits until every Day 1 slot is on Day 1 so they all claim together.</p>
           <p>Hold: never claims this slot until you change it.</p>
         </div>
         <div class="panel table streak-table" id="streakTable"></div>
         <div class="row-actions">
           <button class="ghost" id="sequencePreset">Align other slots with slot 1</button>
+          <button class="ghost" id="sequenceSyncPreset">Line up all slots at Day 1</button>
         </div>
       </section>
 
