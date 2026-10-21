@@ -1,0 +1,21 @@
+XynClaim third-party notices
+============================
+
+This distribution includes the following font software under the SIL Open Font
+License, Version 1.1. The complete license is included beside this file as
+OFL-1.1.txt.
+
+Chakra Petch
+Copyright 2018 The Chakra Petch Project Authors
+https://github.com/m4rc1e/Chakra-Petch
+
+DM Mono
+Copyright 2020 The DM Mono Project Authors
+https://github.com/googlefonts/dm-mono
+
+Inter
+Copyright 2016 The Inter Project Authors
+https://github.com/rsms/inter
+
+The fonts are redistributed unmodified as application assets. Their inclusion
+does not place XynClaim itself under the SIL Open Font License.

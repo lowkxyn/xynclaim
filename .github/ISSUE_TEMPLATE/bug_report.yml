@@ -1,0 +1,42 @@
+name: Bug report
+description: A run stopped, failed or did something unexpected
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, what XynClaim did instead, and which slot it was on.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: XynClaim version
+      description: Shown at the bottom of the left sidebar, or in the Version line of run_*.txt.
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: started
+    attributes:
+      label: How the run started
+      options:
+        - Start run button or F6
+        - Daily schedule
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Run files
+      description: |
+        Attach live_run.log and the newest run_*.txt from %LOCALAPPDATA%\XynClaim\reports.
+        Private server codes are already blanked out, but read the files before posting.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I downloaded XynClaim from this repository's Releases page.
+          required: true

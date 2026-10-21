@@ -1,0 +1,37 @@
+# Allowlist: everything is ignored unless listed below.
+# Dev notes, build output, mockups and personal data must never be committed.
+# To publish a new file, add an explicit "!path" line here on purpose.
+/*
+!/.gitignore
+!/LICENSE
+!/README.md
+!/INSTALL.md
+!/PRIVACY.md
+!/HOW_IT_WORKS.md
+!/pytest.ini
+!/requirements.txt
+!/requirements-dev.txt
+!/xynclaim/
+!/pyproject.toml
+!/.github/
+
+!/assets/
+/assets/*
+!/assets/reference/
+!/packaging/
+!/tests/
+!/ui/
+/ui/_*
+
+# Private files that must never ride along inside an allowed folder.
+.env
+*.env
+*-PRIVATE*
+*.private.*
+*.log
+*.bundle
+/tests/fixtures/raw-*
+
+__pycache__/
+*.py[cod]
+.pytest_cache/

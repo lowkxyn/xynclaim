@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- Installer design and artwork: Omar Toketa <omar.toketa47@proton.me> -->
+<html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>__APP__ Setup</title><style>__STYLE__</style></head><body><svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6a6a74"/><stop offset="1" stop-color="#b4bbc8"/>
+    </linearGradient>
+    <linearGradient id="g-ring" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6a6a74"/><stop offset="1" stop-color="#d9dde4"/>
+    </linearGradient>
+    <!-- v2's hand-drawn stand-in, kept only for the comparison in the guide -->
+    <symbol id="xglyph" viewBox="0 0 32 32">
+      <path fill="url(#g-mark)" d="M4.2 3h6.6l5.2 8.2L21.2 3h6.6l-8.5 13 8.5 13h-6.6L16 20.8 10.8 29H4.2l8.5-13z"/>
+    </symbol>
+    <symbol id="i-min" viewBox="0 0 10 10"><path d="M1 5h8" stroke="currentColor" stroke-width="1"/></symbol>
+    <symbol id="i-close" viewBox="0 0 10 10"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#7eb39a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+  <div class="win" id="win" role="dialog" aria-label="__APP__ Setup">
+    <div class="tb">
+      <div class="tb-drag"><span class="mark-wrap"><span class="mark mark-sm"></span></span><span class="tb-title">__APP__ Setup</span></div>
+      <button class="tb-btn" id="minimise" title="Minimise" aria-label="Minimise"><svg><use href="#i-min"/></svg></button>
+      <button class="tb-btn tb-close" data-close aria-label="Close"><svg><use href="#i-close"/></svg></button>
+    </div>
+    <div class="body">
+
+      <!-- Welcome: fresh install -->
+      <section class="screen" id="s-welcome">
+        <span class="mark-wrap" data-logo><span class="mark logo"><span class="sheen"></span></span></span>
+        <div class="name" data-name>__BRAND__</div>
+        <div class="title-lg" id="updateTitle" hidden>Update __APP__</div>
+        <div class="chip" id="updateChip" hidden>installed <b id="installedVersion"></b> &rarr; new <b>__VERSION__</b></div>
+        <p class="lead fold" id="updateLead" hidden></p>
+        <div class="ver">Version __VERSION__ &middot; installs for your Windows account, no admin needed</div>
+        <div class="opts" inert>
+          <div class="panel" data-optpanel>
+            <div class="row"><span class="lbl">Install folder</span>
+              <div class="path"><input class="inp" id="folder" value="" spellcheck="false" aria-label="Install folder"><button class="btn-sm" type="button" id="browse">Browse</button></div></div>
+            <div class="row"><span class="lbl">Desktop shortcut</span><button class="toggle active" data-opt="Desktop" role="switch" aria-checked="true" aria-label="Desktop shortcut"></button></div>
+            <div class="row"><span class="lbl">Start menu shortcut</span><button class="toggle active" data-opt="Start menu" role="switch" aria-checked="true" aria-label="Start menu shortcut"></button></div>
+          </div>
+        </div>
+        <div class="legal">By installing, you agree to the <button class="link" id="licenceButton">licence</button>.</div>
+        <div class="cta">
+          <button class="btn-primary big" data-install>Install</button>
+          <button class="link" data-opts aria-expanded="false">Options <svg class="chev"><use href="#i-chev"/></svg></button>
+        </div>
+      </section>
+
+      <!-- Installing -->
+      <section class="screen" id="s-install" hidden>
+        <span class="mark-wrap" data-logo><span class="mark logo sm"><span class="sheen"></span></span></span>
+        <div class="prog" id="prog">
+          <div class="track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="track"><div class="fill" id="fill"><div class="glow-lane"><div class="sweep"></div></div><div class="core-lane"><div class="core"></div></div></div></div>
+          <div class="prog-row"><div class="step" id="step" aria-live="polite">Preparing</div><div class="pct mono" id="pct">0%</div></div>
+          <div class="detail mono" id="detail"></div>
+        </div>
+        <div class="foot" id="installFoot">Installing __APP__ __VERSION__</div>
+      </section>
+
+      <!-- Done -->
+      <section class="screen" id="s-done" hidden>
+        <div class="check"><svg><use href="#i-check"/></svg></div>
+        <div class="title-lg" id="doneTitle">__APP__ is ready</div>
+        <p class="lead" id="doneLead">__READY_TEXT__</p>
+        <div class="btn-row">
+          <button class="btn-primary big" style="width:200px" data-close="launch">Start __APP__</button>
+          <button class="btn-sm lg" data-close>Close</button>
+        </div>
+      </section>
+
+      <section class="screen" id="s-error" hidden>
+        <div class="title-lg">Installation couldn't finish</div>
+        <p class="error-text" id="errorText" role="alert"></p>
+        <div class="btn-row"><button class="btn-primary" id="retry">Back to setup</button><button class="btn-sm lg" data-close>Close</button></div>
+      </section>
+      <section class="screen" id="s-licence" hidden>
+        <div class="title-lg">Licence</div><pre class="panel licence" id="licenceText"></pre>
+        <div class="btn-row"><button class="btn-primary" id="licenceBack">Back</button></div>
+      </section>
+    </div>
+  </div>
+
+<script>__CONFIG__</script><script>__SCRIPT__</script></body></html>

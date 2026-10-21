@@ -1,0 +1,11 @@
+{
+  "name": "XynClaim",
+  "brand": "XYNCLAIM",
+  "exe": "XynClaim.exe",
+  "registryKey": "Software\\XynClaim",
+  "uninstallKey": "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\XynClaim",
+  "icon": "../xynclaim.ico",
+  "logo": "../../ui/icon.png",
+  "readyText": "Start XynClaim to set up your accounts and daily claims.",
+  "updateText": "Update keeps your settings, accounts and install folder."
+}

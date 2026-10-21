@@ -1,0 +1,3 @@
+# Extra packages needed to run tests/. Not required to use XynClaim.
+-r requirements.txt
+pytest>=7.4

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>XynClaim</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="window" id="windowFrame">
+  <header class="titlebar pywebview-drag-region">
+    <span class="tb-name pywebview-drag-region" data-window-drag>XynClaim</span>
+    <span class="tb-center mono pywebview-drag-region" id="resetClock">Daily reset</span>
+    <span class="tb-icons">
+      <button class="tb-btn" data-window="compact" title="Compact mode" aria-label="Compact mode"><svg viewBox="0 0 24 24"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+      <span class="sep"></span>
+      <button class="tb-btn" data-window="minimize" aria-label="Minimize"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="tb-btn" data-window="toggle-maximize" aria-label="Maximize"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg></button>
+      <button class="tb-btn close" data-window="close" aria-label="Close"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+    </span>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand pywebview-drag-region"><img class="brand-mark" src="icon.png" alt=""><div class="brand-info"><span class="brand-name">XynClaim</span><small>DBOG DAILY CLAIMER</small></div></div>
+      <nav>
+        <a href="#dashboard" data-view="dashboard" title="Dashboard"><i><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></svg></i>Dashboard</a>
+        <a href="#streak" data-view="streak" title="Streak"><i><svg viewBox="0 0 24 24"><path d="M6 3v3m12-3v3M4 9h16M5 5h14v15H5zM8 13h3v3H8z"/></svg></i>Streak</a>
+        <a href="#history" data-view="history" title="History"><i><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2M4.9 4.9A10 10 0 1 1 2 12h3M2 5v7h7"/></svg></i>History</a>
+        <a href="#stats" data-view="stats" title="Statistics"><i><svg viewBox="0 0 24 24"><path d="M4 20V10m6 10V4m6 16v-7m4 7H3"/></svg></i>Statistics</a>
+        <a href="#schedule" data-view="schedule" title="Schedule"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></i>Schedule</a>
+        <a href="#settings" data-view="settings" title="Settings"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2.4l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2Z"/></svg></i>Settings</a>
+      </nav>
+      <div class="side-foot">
+        <div class="side-status"><b class="dot" id="sideDot"></b><span class="mono" id="sideStatus">Ready</span></div>
+        <small>made by Xyn <span id="appVersion"></span></small>
+      </div>
+    </aside>
+
+    <main>
+      <div class="banner bad" id="settingsWarning" hidden>
+        <span id="settingsWarningText"></span>
+        <button class="ghost" id="resetSettings">Back up and reset settings</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <section class="view" id="view-dashboard">
+        <header class="page"><h1>Dashboard</h1><p>Daily login rewards across your character slots</p></header>
+        <div class="banner bad" id="setupBanner" hidden>
+          <span id="setupBannerText"></span>
+          <a class="link" href="#settings">Open Settings</a>
+        </div>
+        <div class="panel first-run" id="firstRun" hidden>
+          <b>Before your first run</b>
+          <ol>
+            <li>Set how many character slots this account has in <a class="link" href="#settings">Settings</a>.</li>
+            <li>Pick your server: your own private server or a friend's code.</li>
+            <li>Press Start.</li>
+          </ol>
+        </div>
+        <div class="big-actions">
+          <button class="big start" id="startButton">START</button>
+          <button class="big stop" id="stopButton" disabled>STOP</button>
+        </div>
+        <div class="keys"><span><kbd id="hotkeyLabel">F6</kbd><span id="hotkeyText">Start / Stop while this window is focused</span></span><span class="dim" id="selectionSummary"></span></div>
+
+        <div class="stats">
+          <div class="stat"><span>NEXT RESET</span><strong class="mono" id="nextResetValue">&mdash;</strong><small id="nextResetSub"></small></div>
+          <div class="stat"><span>CURRENT SLOT</span><strong class="mono" id="slotValue">&mdash;</strong></div>
+          <div class="stat"><span>TODAY</span><strong class="mono" id="todayValue">&mdash;</strong><small id="todayReward"></small></div>
+          <div class="stat"><span>SESSION TIME</span><strong class="mono" id="elapsedValue">00:00</strong></div>
+        </div>
+
+        <div class="now">
+          <div class="now-row"><b class="dot" id="nowDot"></b><span id="nowText">Waiting to start</span><span class="mono dim" id="nowRight"></span></div>
+          <div class="bar"><i id="progress"></i></div>
+        </div>
+
+        <h2 class="sec">TODAY'S SLOTS</h2>
+        <div class="slots" id="slotTiles"></div>
+
+        <h2 class="sec">LIVE ACTIVITY <button class="link" id="clearLog">clear</button></h2>
+        <div class="panel log mono" id="logFeed"></div>
+      </section>
+
+      <!-- STREAK -->
+      <section class="view" id="view-streak">
+        <header class="page"><h1>Streak</h1><p>Where each slot sits on the 14-day reward cycle</p></header>
+        <h2 class="sec">REWARD TRACK</h2>
+        <div class="track" id="track"></div>
+        <p class="note">Some rewards are account-wide. After the first slot claims 2&times; XP, the rest get +10 Mastery Points instead.</p>
+
+        <h2 class="sec">SLOTS</h2>
+        <div class="note rules-note">
+          <p>Claim: claims this slot every day.</p>
+          <p>Align: keeps this slot on the same reward day as the slot you pick (by default the first slot set to Claim). It only claims on days when both are on the same day; otherwise it skips that day. After a skipped day DBOG may give a grace day or offer a Robux restore (XynClaim never buys it). If not, the slot goes back to Day 1 and waits until the other slot is on Day 1 too, which can take up to two weeks once. After that they claim together.</p>
+          <p>Hold: never claims this slot until you change it.</p>
+        </div>
+        <div class="panel table streak-table" id="streakTable"></div>
+        <div class="row-actions">
+          <button class="ghost" id="sequencePreset">Align other slots with slot 1</button>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="view" id="view-history">
+        <header class="page"><h1>History</h1><p>Every run and what each slot actually received</p></header>
+        <div class="split">
+          <div class="panel runs" id="runList"></div>
+          <div class="panel detail" id="runDetail">
+            <div class="detail-head"><div><b id="detailTitle">No runs yet</b><small id="detailSub"></small></div><button class="ghost" id="openReports">Open folder</button></div>
+            <div class="rx">
+              <div class="rx-list" id="rxList"></div>
+              <figure class="receipt"><img id="receiptImage" alt="Reward popup" hidden><p class="empty" id="receiptEmpty">Pick a slot to see its reward popup.</p><figcaption><span id="receiptCaption"></span><span class="mono dim">read from the reward popup</span></figcaption></figure>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATISTICS -->
+      <section class="view" id="view-stats">
+        <header class="page"><h1>Statistics</h1><p>Everything XynClaim has collected on this PC</p></header>
+        <div class="stats" id="statTotals"></div>
+        <div class="two">
+          <div><h2 class="sec">CLAIMS PER DAY</h2><div class="panel chart" id="claimsChart"></div></div>
+          <div><h2 class="sec">RUN LENGTH (MIN)</h2><div class="panel chart" id="durationChart"></div></div>
+        </div>
+        <div class="two">
+          <div><h2 class="sec">COLLECTED</h2><div class="panel kvs" id="collected"></div></div>
+          <div><h2 class="sec">MOST COMMON ITEMS</h2><div class="panel kvs" id="topItems"></div></div>
+        </div>
+        <h2 class="sec">PER SLOT</h2>
+        <div class="panel table slotstats" id="slotStats"></div>
+        <div class="stat-foot"><button class="ghost" id="exportCsv">Export CSV</button><span class="note">Built from the run reports saved on this PC. Nothing is uploaded.</span></div>
+        <section id="perSlotSection" hidden>
+          <h2 class="sec">PER SLOT DETAILS</h2>
+          <div class="slot-picker"><label for="statsSlotPicker">Slot</label><select id="statsSlotPicker"></select></div>
+          <details class="panel slot-details" id="slotDetails">
+            <summary id="slotDetailsTitle">Slot 1 details</summary>
+            <div class="slot-details-body" id="slotDetailsBody" aria-busy="false">
+              <div class="stats slot-totals" id="slotDetailTotals"></div>
+              <p class="note" id="slotLastClaim"></p>
+              <div class="two">
+                <div><h2 class="sec">COLLECTED</h2><div class="panel kvs" id="slotCollected"></div></div>
+                <div><h2 class="sec">ITEMS</h2><div class="panel kvs" id="slotItems"></div></div>
+              </div>
+              <h2 class="sec">DRAGON BALLS</h2>
+              <p class="note" id="slotDragonBalls"></p>
+              <h2 class="sec">RECENT CLAIMS</h2>
+              <div class="slot-recent" id="slotRecent"></div>
+              <div class="row-actions"><button class="ghost" id="exportSlotCsv">Export this slot</button></div>
+            </div>
+          </details>
+        </section>
+      </section>
+
+      <!-- SCHEDULE -->
+      <section class="view" id="view-schedule">
+        <header class="page"><h1>Schedule</h1><p>Claim automatically after the daily reset</p></header>
+        <div class="panel rows">
+          <div class="row"><div><b id="schedEnabledLabel">Run automatically</b><small>Starts a run after each reset while your PC is on and you're signed in.</small></div><button class="sw" id="schedEnabled" role="switch" aria-labelledby="schedEnabledLabel"><i></i></button></div>
+          <div class="row"><div><b>Start time</b><small id="resetHint">Minutes after the daily reset.</small></div>
+            <select id="schedOffset"><option value="0">At reset</option><option value="15">15 min after reset</option><option value="30">30 min after reset</option><option value="60">1 hour after reset</option><option value="120">2 hours after reset</option><option value="240">4 hours after reset</option></select></div>
+          <div class="row"><div><b id="schedCatchUpLabel">Catch up if missed</b><small>If the PC was off at that time, run as soon as it's back.</small></div><button class="sw" id="schedCatchUp" role="switch" aria-labelledby="schedCatchUpLabel"><i></i></button></div>
+          <div class="row"><div><b>Slots due for Day 1</b><small>A Day 1 claim restarts that slot's streak.</small></div><div class="seg" id="schedDay1"><button data-value="hold">Skip</button><button data-value="claim">Claim</button></div></div>
+          <div class="row"><div><b>If Roblox is in use</b><small>Never takes over a game you're playing.</small></div><select id="schedBusy"><option value="wait">Wait and retry (up to 2 h)</option><option value="skip">Skip that day</option></select></div>
+        </div>
+        <p class="note" id="schedStatus"></p>
+
+        <h2 class="sec">DISCORD REPORT</h2>
+        <div class="two">
+          <div class="panel rows">
+            <div class="row"><div><b id="notificationsEnabledLabel">Send a report after each run</b><small>Your webhook is encrypted and stays on this PC.</small></div><button class="sw" id="notificationsEnabled" role="switch" aria-labelledby="notificationsEnabledLabel"><i></i></button></div>
+            <div class="row col"><div><b>Webhook</b><small id="notificationHint">Paste a Discord webhook link.</small></div><input id="webhookUrl" type="text" spellcheck="false" autocomplete="off" placeholder="https://discord.com/api/webhooks/..."></div>
+            <div class="row"><span></span><span class="btns"><button class="ghost" id="testNotification">Send test</button><button class="primary" id="saveNotifications">Save</button></span></div>
+          </div>
+          <div class="embed">
+            <div class="embed-bar"></div>
+            <div class="embed-body" id="embedPreview"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings">
+        <header class="page"><h1>Settings</h1><p>Server access, slots and how runs behave</p></header>
+        <h2 class="sec">SETUP CHECK</h2>
+        <div class="checks" id="setupChecks"></div>
+
+        <h2 class="sec">SERVER ACCESS</h2>
+        <div class="panel rows">
+          <div class="row"><div><b>Server</b><small>Codes stay on this PC and are never sent anywhere.</small></div><div class="seg" id="accessMode"><button data-value="owner">My private server</button><button data-value="shared">Friend's code</button></div></div>
+          <div class="row" id="sharedCodeRow" hidden><div><b>Friend's server code</b><small>Used for this run only, never saved.</small></div><input id="serverCode" type="password" autocomplete="off" spellcheck="false"></div>
+          <div class="row"><div><b id="publicFallbackLabel">Public server if private fails</b><small>Off by default. Only used after a private join is rejected.</small></div><button class="sw" id="publicFallback" role="switch" aria-labelledby="publicFallbackLabel"><i></i></button></div>
+        </div>
+
+        <h2 class="sec">SLOTS</h2>
+        <div class="panel rows">
+          <div class="row"><div><b>Character slots on this account</b></div><select id="slotCount"></select></div>
+          <div class="row"><div><b>Run these slots</b><small><button class="link" id="selectAllSlots">all</button> &middot; <button class="link" id="clearSlots">none</button></small></div><div class="chips" id="slotChips"></div></div>
+        </div>
+
+        <h2 class="sec">DURING A RUN</h2>
+        <div class="panel rows">
+          <div class="row" id="hotkeySetting" hidden><div><b id="hotkeySettingLabel">Start / Stop key</b><small id="hotkeyCaptureHint">Click to change. Escape cancels; Backspace or Delete turns it off.</small></div><button class="ghost hotkey-button" id="hotkeyButton" aria-labelledby="hotkeySettingLabel hotkeyButton" aria-describedby="hotkeyCaptureHint">F6</button></div>
+          <div class="row"><div><b>Display</b><small>Roblox is resized to a 1920 &times; 1080 game area for the run, then restored.</small></div><select id="runMonitor"></select></div>
+          <div class="row"><div><b id="muteRobloxLabel">Mute Roblox</b></div><button class="sw" id="muteRoblox" role="switch" aria-labelledby="muteRobloxLabel"><i></i></button></div>
+          <div class="row"><div><b id="lowGraphicsLabel">Low graphics</b><small>Drops Roblox to graphics 1 with Shift+F10 for the run, then F10 back to yours. Needs Graphics Mode set to Manual.</small></div><button class="sw" id="lowGraphics" role="switch" aria-labelledby="lowGraphicsLabel"><i></i></button></div>
+          <div class="row"><div><b id="lowCpuPriorityLabel">Low CPU priority</b><small>Keeps the rest of your PC responsive.</small></div><button class="sw" id="lowCpuPriority" role="switch" aria-labelledby="lowCpuPriorityLabel"><i></i></button></div>
+          <div class="row"><div><b id="closeWhenDoneLabel">Close Roblox when done</b></div><button class="sw" id="closeWhenDone" role="switch" aria-labelledby="closeWhenDoneLabel"><i></i></button></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Compact mode: the window shrinks to this pill while a run is going. -->
+<div class="pill pywebview-drag-region" id="pill" hidden>
+  <b class="dot pywebview-drag-region" id="pillDot"></b>
+  <div class="pill-main pywebview-drag-region">
+    <span class="pill-act" id="pillText">Ready</span>
+    <span class="pill-segs" id="pillSegs"></span>
+  </div>
+  <span class="mono pill-time" id="pillTime">00:00</span>
+  <button class="pill-stop" id="pillStop">Stop</button>
+  <button class="pill-exp" data-window="expand" aria-label="Expand"><svg viewBox="0 0 24 24"><path d="M4 14v6h6M20 10V4h-6M4 20l7-7M20 4l-7 7"/></svg></button>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
