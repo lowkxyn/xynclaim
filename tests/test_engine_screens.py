@@ -38,7 +38,7 @@ def test_slot_points_follow_the_two_column_six_row_grid():
     ]
 
 
-def test_owner_private_join_retries_enter_once_without_generating_or_typing_a_code(fake_clock):
+def test_owner_private_join_retries_join_once_without_generating_or_typing_a_code(fake_clock):
     runner = bare_runner()
     runner.open_slot_select = mock.Mock()
     runner.click_transition = mock.Mock()
@@ -54,8 +54,9 @@ def test_owner_private_join_retries_enter_once_without_generating_or_typing_a_co
         mock.call(*runner.slot_point(2), "server_menu", 0.8, "slot_select"),
         mock.call(*claimer.DESTINATION_NORTH_EARTH, "private_panel", 8.0, "server_menu"),
     ]
-    assert runner.click.call_args_list == [mock.call(*claimer.PRIVATE_CODE_FIELD)] * 2
-    assert runner.tap.call_args_list == [mock.call("enter")] * 2
+    field, join = mock.call(*claimer.PRIVATE_CODE_FIELD), mock.call(*claimer.PRIVATE_JOIN_BUTTON)
+    assert runner.click.call_args_list == [field, join, field, join]
+    runner.tap.assert_not_called()
     assert runner.wait_until_gone.call_args_list == [mock.call("private_panel", 15.0)] * 2
     assert fake_clock[0] == pytest.approx(0.5 + 0.4 + 0.4)
     runner.input.replace_text.assert_not_called()

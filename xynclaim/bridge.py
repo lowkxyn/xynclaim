@@ -472,7 +472,12 @@ class XynClaimAPI:
             finally:
                 shared_code = ""
                 if minimized_hwnd:
-                    ctypes.windll.user32.ShowWindow(minimized_hwnd, SW_RESTORE)
+                    # pywebview's restore runs on the UI thread and wakes WebView2; a raw
+                    # ShowWindow from this thread brings back the frame but leaves it blank white.
+                    if self._window is not None:
+                        self._window.restore()
+                    else:
+                        ctypes.windll.user32.ShowWindow(minimized_hwnd, SW_RESTORE)
                 with self._lock:
                     if self._final_report is not None:
                         self._elapsed_seconds = float(self._final_report["total_seconds"])

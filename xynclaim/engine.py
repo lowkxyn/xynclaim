@@ -62,6 +62,8 @@ DAILY_BACK_BUTTON = (500, 820)
 PLAY_BUTTON = (956, 886)
 DESTINATION_NORTH_EARTH = (940, 270)
 PRIVATE_CODE_FIELD = (633, 540)
+# Added by DBOG's 25 Oct 2026 (Paths 2) update, under Generate; Enter no longer joins.
+PRIVATE_JOIN_BUTTON = (633, 686)
 MENU_TRAVEL_TAB = (34, 598)
 TRAVEL_MAIN_MENU = (146, 484)
 MAX_RUN_REPORTS = 50
@@ -178,9 +180,9 @@ ANCHORS = {
     "global_reward_locked": AnchorSpec(
         "global_reward_locked.png", (790, 120, 1200, 178), (700, 90, 1280, 215), 0.70
     ),
-    # Side MENU tab while the menu is open (it slides right of the panel).
+    # Lower icons of the left tab bar shown while the menu is open (Paths 2 UI).
     "game_menu": AnchorSpec(
-        "travel_menu.png", (536, 515, 580, 675), (515, 495, 600, 695), 0.60
+        "game_menu.png", (12, 620, 58, 800), (0, 590, 90, 830), 0.60
     ),
     "travel_menu": AnchorSpec(
         "travel_menu.png", (70, 395, 300, 430), (50, 380, 330, 445), 0.70
@@ -2156,9 +2158,8 @@ class DBOGRunner:
         )
         time.sleep(0.5)
 
-        # DBOG pre-fills the owner's code. Focusing the field and pressing Enter joins
-        # it, the same as pasting a code. Generate is never clicked: it would replace
-        # the code.
+        # DBOG pre-fills the owner's code; Join Server joins it. Generate is never
+        # clicked: it would replace the code.
         self.click(*PRIVATE_CODE_FIELD)
         self.normal_input_guard()
         if self.access_mode == "shared":
@@ -2169,16 +2170,15 @@ class DBOGRunner:
             self.input.replace_text(self.server_code, self.normal_input_guard)
         try:
             for attempt in range(2):
-                # The field needs a moment to take focus; an early Enter is dropped.
                 time.sleep(0.4)
-                self.tap("enter")
+                self.click(*PRIVATE_JOIN_BUTTON)
                 try:
                     self.wait_until_gone("private_panel", 15.0)
                     break
                 except TimeoutError:
                     if attempt:
                         raise
-                    self.log("Private server join needs a second Enter — retrying once")
+                    self.log("Private server join needs a second Join Server click — retrying once")
                     self.click(*PRIVATE_CODE_FIELD)
             self._shared_code_may_be_visible = False
         except TimeoutError as error:

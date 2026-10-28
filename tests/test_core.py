@@ -494,10 +494,10 @@ class JoinCodeRejectionTests(unittest.TestCase):
         runner.wait_for.assert_not_called()
         self.assertEqual(
             runner.click.call_args_list,
-            [mock.call(*claimer.PRIVATE_CODE_FIELD)],
+            [mock.call(*claimer.PRIVATE_CODE_FIELD), mock.call(*claimer.PRIVATE_JOIN_BUTTON)],
         )
         runner.input.replace_text.assert_called_once_with("FriendCode", runner.normal_input_guard)
-        runner.tap.assert_called_once_with("enter")
+        runner.tap.assert_not_called()
         runner.wait_until_gone.assert_called_once_with("private_panel", 15.0)
         runner.click_until_gone.assert_not_called()
         self.assertFalse(runner._shared_code_may_be_visible)
@@ -558,9 +558,10 @@ class JoinCodeRejectionTests(unittest.TestCase):
             runner.input.replace_text.call_args_list,
             [mock.call(secret, runner.normal_input_guard), mock.call("", runner.require_focus)],
         )
-        self.assertEqual(runner.tap.call_args_list, [mock.call("enter")] * 2)
+        runner.tap.assert_not_called()
         self.assertEqual(runner.wait_until_gone.call_args_list, [mock.call("private_panel", 15.0)] * 2)
-        self.assertEqual(runner.click.call_args_list, [mock.call(*claimer.PRIVATE_CODE_FIELD)] * 3)
+        field, join = mock.call(*claimer.PRIVATE_CODE_FIELD), mock.call(*claimer.PRIVATE_JOIN_BUTTON)
+        self.assertEqual(runner.click.call_args_list, [field, join, field, join, field])
         self.assertFalse(runner._shared_code_may_be_visible)
 
 
